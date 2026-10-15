@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#173f35">
+  <meta name="description" content="TierWelt Lexikon – entdecke Tiere aus aller Welt.">
+  <link rel="manifest" href="manifest.json">
+  <title>TierWelt Lexikon</title>
+  <style>
+    :root { --green:#173f35; --leaf:#dce9df; --paper:#f7f7f0; --ink:#20332d; --muted:#64736c; --white:#fff; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--paper); color:var(--ink); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    header { background:var(--green); color:white; padding:28px 18px 24px; border-radius:0 0 24px 24px; }
+    .wrap { max-width:900px; margin:auto; }
+    .brand { display:flex; gap:12px; align-items:center; }
+    .logo { font-size:34px; }
+    h1 { font-size:clamp(1.5rem,5vw,2.25rem); margin:0; letter-spacing:-.04em; }
+    header p { margin:8px 0 18px; color:#e0eee6; }
+    input[type=search] { width:100%; border:0; border-radius:14px; padding:15px 16px; font-size:1rem; outline:2px solid transparent; }
+    input[type=search]:focus { outline-color:#a8cbb3; }
+    main { padding:22px 16px 40px; }
+    .section-head { display:flex; justify-content:space-between; gap:12px; align-items:end; margin:8px 0 14px; }
+    h2 { font-size:1.2rem; margin:0; }
+    .count { color:var(--muted); font-size:.9rem; }
+    .filters { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
+    .filter { border:1px solid #cbd8ce; color:var(--green); background:white; padding:8px 12px; border-radius:999px; cursor:pointer; }
+    .filter.active { background:var(--green); color:white; border-color:var(--green); }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr)); gap:14px; }
+    .animal { background:white; border:1px solid #e2e8e1; border-radius:18px; padding:17px; box-shadow:0 3px 14px #173f3509; cursor:pointer; text-align:left; color:inherit; width:100%; }
+    .animal:hover { border-color:#93b39d; transform:translateY(-1px); }
+    .animal .emoji { font-size:34px; background:#eef4ed; width:58px; height:58px; border-radius:16px; display:grid; place-items:center; margin-bottom:12px; }
+    .animal h3 { margin:0 0 3px; font-size:1.12rem; }
+    .latin { color:var(--muted); font-size:.9rem; font-style:italic; }
+    .tag { display:inline-block; margin-top:11px; padding:5px 9px; background:var(--leaf); color:var(--green); border-radius:999px; font-size:.78rem; }
+    .empty { background:white; border-radius:16px; padding:22px; color:var(--muted); }
+    dialog { width:min(92vw,620px); max-height:85vh; overflow:auto; border:0; border-radius:20px; padding:0; box-shadow:0 20px 80px #0004; color:var(--ink); }
+    dialog::backdrop { background:#10251fc2; }
+    .detail-head { background:var(--green); color:white; padding:24px; }
+    .detail-head .emoji { font-size:48px; }
+    .detail-head h2 { font-size:1.65rem; margin:8px 0 4px; }
+    .detail-body { padding:22px; }
+    .detail-body h3 { margin:20px 0 6px; font-size:1rem; }
+    .detail-body p { line-height:1.55; margin:0; }
+    .close { float:right; border:0; border-radius:50%; width:38px; height:38px; font-size:1.3rem; cursor:pointer; background:#ffffff25; color:white; }
+    footer { text-align:center; padding:18px; color:var(--muted); font-size:.82rem; }
+    .note { margin:20px 0; background:#edf2e8; border-radius:14px; padding:14px; font-size:.9rem; line-height:1.5; }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="brand"><div class="logo" aria-hidden="true">🐾</div><div><h1>TierWelt Lexikon</h1><div>Entdecke die Vielfalt der Tierwelt</div></div></div>
+    <p>Finde Tiere, lerne ihre Lebensweise kennen und entdecke spannende Fakten.</p>
+    <label for="search" style="display:block;margin-bottom:7px;font-weight:600">Welches Tier suchst du?</label>
+    <input id="search" type="search" placeholder="z. B. Tiger, Frosch, Apis mellifera …" autocomplete="off">
+  </div>
+</header>
+<main class="wrap">
+  <div class="section-head"><h2>Tiergruppen entdecken</h2></div>
+  <nav class="filters" id="filters" aria-label="Tiergruppen"></nav>
+  <div class="section-head"><h2 id="resultsTitle">Alle Tiere</h2><span class="count" id="count"></span></div>
+  <section class="grid" id="animals" aria-live="polite"></section>
+  <div class="note"><strong>Über dieses Lexikon:</strong> Diese erste Version enthält beispielhafte, allgemein gehaltene Steckbriefe. Sie ist ein Startpunkt – kein vollständiges Verzeichnis aller bekannten Tierarten. Angaben sollten vor einer Veröffentlichung fachlich geprüft und mit geeigneten Quellen ergänzt werden.</div>
+</main>
+<footer>TierWelt Lexikon · Erste kostenlose Prototyp-Version</footer>
+<dialog id="detail">
+  <div class="detail-head">
+    <button class="close" id="close" aria-label="Schließen">×</button>
+    <div class="emoji" id="dEmoji"></div>
+    <h2 id="dName"></h2><div class="latin" id="dLatin" style="color:#dce9df"></div>
+  </div>
+  <div class="detail-body">
+    <div class="tag" id="dGroup"></div>
+    <h3>Steckbrief</h3><p id="dSummary"></p>
+    <h3>Lebensraum</h3><p id="dHabitat"></p>
+    <h3>Ernährung</h3><p id="dFood"></p>
+    <h3>Merkmale und Verhalten</h3><p id="dFacts"></p>
+    <h3>Wissenswert</h3><p id="dFun"></p>
+  </div>
+</dialog>
+<script>
+const animals = [
+ {name:"Afrikanischer Elefant",latin:"Loxodonta africana",group:"Säugetiere",emoji:"🐘",summary:"Ein großes Pflanzenfresser-Säugetier und das größte heute lebende Landtier.",habitat:"Savannen, Buschland und Wälder in Teilen Afrikas südlich der Sahara.",food:"Gräser, Blätter, Rinde, Wurzeln und Früchte.",facts:"Elefanten leben oft in sozialen Familiengruppen. Ihr Rüssel dient zum Riechen, Greifen, Trinken und für viele weitere Aufgaben.",fun:"Elefanten kommunizieren unter anderem mit Lauten, die teilweise unterhalb des menschlichen Hörbereichs liegen."},
+ {name:"Bengalischer Tiger",latin:"Panthera tigris tigris",group:"Säugetiere",emoji:"🐅",summary:"Eine Unterart des Tigers, bekannt für ihr orangefarbenes Fell mit dunklen Streifen.",habitat:"Vor allem Wälder, Graslandschaften und Mangroven in Südasien.",food:"Fleisch; unter anderem Hirsche und Wildschweine, abhängig vom Lebensraum.",facts:"Tiger sind meist Einzelgänger und nutzen große Reviere. Streifenmuster sind individuell unterschiedlich.",fun:"Auch die Haut eines Tigers weist Streifenmuster auf."},
+ {name:"Rotfuchs",latin:"Vulpes vulpes",group:"Säugetiere",emoji:"🦊",summary:"Ein anpassungsfähiger Vertreter der Hundeartigen, der in vielen Landschaften leben kann.",habitat:"Wälder, Felder, Gebirge und auch Städte in weiten Teilen der Nordhalbkugel.",food:"Kleinsäuger, Insekten, Vögel, Früchte und andere verfügbare Nahrung.",facts:"Füchse sind meist in der Dämmerung und nachts aktiv. Sie nutzen verschiedene Laute und Körpersignale.",fun:"Rotfüchse können auch in städtischen Gebieten erfolgreich leben."},
+ {name:"Großer Panda",latin:"Ailuropoda melanoleuca",group:"Säugetiere",emoji:"🐼",summary:"Ein schwarz-weißes Bärenverwandter, dessen Nahrung überwiegend aus Bambus besteht.",habitat:"Kühle, feuchte Bergwälder in Teilen Chinas.",food:"Vor allem Bambus; gelegentlich andere pflanzliche Nahrung und selten tierische Kost.",facts:"Pandas verbringen viele Stunden mit Fressen, weil Bambus relativ nährstoffarm ist.",fun:"Der sogenannte falsche Daumen ist ein umgebildeter Handwurzelknochen, der beim Greifen hilft."},
+ {name:"Rotkehlchen",latin:"Erithacus rubecula",group:"Vögel",emoji:"🐦",summary:"Ein kleiner Singvogel mit orange-roter Brust und vertrautem Gesang.",habitat:"Gärten, Hecken, Parks und Wälder in Europa und angrenzenden Regionen.",food:"Insekten, Spinnen und andere kleine Wirbellose; im Herbst und Winter auch Beeren.",facts:"Rotkehlchen verteidigen häufig ihr Revier. Viele bleiben im Winter in ihrer Region, andere ziehen weiter.",fun:"Rotkehlchen können auch im Winter singen."},
+ {name:"Wanderfalke",latin:"Falco peregrinus",group:"Vögel",emoji:"🦅",summary:"Ein weltweit verbreiteter Greifvogel, der seine Beute häufig im Flug schlägt.",habitat:"Küsten, Felsen, offene Landschaften und teils Städte.",food:"Vor allem andere Vögel.",facts:"Der Wanderfalke besitzt lange, spitze Flügel und ein sehr leistungsfähiges Sehvermögen.",fun:"Seine Jagdsturzflüge gehören zu den schnellsten dokumentierten Bewegungen im Tierreich."},
+ {name:"Schleiereule",latin:"Tyto alba",group:"Vögel",emoji:"🦉",summary:"Eine Eule mit herzförmigem Gesichtsschleier und besonders gutem Gehör.",habitat:"Offene Landschaften, Kulturland und Gebäude mit geeigneten Brutplätzen.",food:"Vor allem kleine Säugetiere, insbesondere Mäuse.",facts:"Die Gesichtsscheibe leitet Schall zu den Ohren. Schleiereulen jagen oft nachts.",fun:"Sie können Beutetiere auch bei sehr wenig Licht anhand von Geräuschen lokalisieren."},
+ {name:"Grüner Leguan",latin:"Iguana iguana",group:"Reptilien",emoji:"🦎",summary:"Eine große pflanzenfressende Echse aus Mittel- und Südamerika.",habitat:"Tropische Wälder, häufig in der Nähe von Gewässern.",food:"Vorwiegend Blätter und andere Pflanzenteile.",facts:"Leguane sind wechselwarm und nutzen Sonnenplätze zur Regulierung ihrer Körpertemperatur.",fun:"Grüne Leguane sind gute Kletterer und können bei Gefahr ins Wasser springen."},
+ {name:"Griechische Landschildkröte",latin:"Testudo hermanni",group:"Reptilien",emoji:"🐢",summary:"Eine europäische Landschildkröte mit festem, knöchern gestütztem Panzer.",habitat:"Warme, trockene bis halbtrockene Gebiete im Mittelmeerraum.",food:"Überwiegend Wildkräuter und andere geeignete Pflanzen.",facts:"Die Art hält je nach Region und Bedingungen eine Winterruhe. Haltung erfordert spezielle Sachkenntnis.",fun:"Der Panzer wächst mit dem Tier und ist Teil seines Skeletts."},
+ {name:"Grasfrosch",latin:"Rana temporaria",group:"Amphibien",emoji:"🐸",summary:"Ein in Europa weit verbreiteter Frosch, der auch kühlere Lebensräume besiedelt.",habitat:"Feuchte Wälder, Wiesen und Gärten in der Nähe geeigneter Laichgewässer.",food:"Kleine Wirbellose wie Insekten, Würmer und Schnecken.",facts:"Die Fortpflanzung findet häufig früh im Jahr im Wasser statt. Eier werden in Laichballen abgelegt.",fun:"Grasfrösche können sich je nach Umgebung unterschiedlich braun, rötlich oder oliv zeigen."},
+ {name:"Axolotl",latin:"Ambystoma mexicanum",group:"Amphibien",emoji:"🩷",summary:"Ein Schwanzlurch, der seine äußeren Kiemen auch im erwachsenen Stadium behält.",habitat:"Ursprünglich Gewässer im Gebiet von Xochimilco bei Mexiko-Stadt.",food:"Kleine Wassertiere wie Würmer, Krebstiere und Insektenlarven.",facts:"Axolotl sind für ihre bemerkenswerte Regenerationsfähigkeit bekannt. Die Wildpopulation ist stark bedroht.",fun:"Anders als viele Salamander durchläuft der Axolotl normalerweise keine vollständige Metamorphose."},
+ {name:"Clownfisch",latin:"Amphiprion ocellaris",group:"Fische",emoji:"🐠",summary:"Ein farbenfroher Rifffisch, der mit bestimmten Seeanemonen zusammenlebt.",habitat:"Korallenriffe im tropischen Indopazifik.",food:"Zooplankton, kleine Wirbellose und organische Nahrungspartikel.",facts:"Die Schleimschicht des Fisches hilft ihm, mit seiner Wirtsanemone zusammenzuleben.",fun:"In einer Gruppe kann das dominante Tier weiblich werden; die Geschlechtsentwicklung ist sozial beeinflusst."},
+ {name:"Weißer Hai",latin:"Carcharodon carcharias",group:"Fische",emoji:"🦈",summary:"Ein großer räuberischer Knorpelfisch, der in vielen gemäßigten und subtropischen Meeren vorkommt.",habitat:"Küstennahe und offene Meeresgebiete verschiedener Ozeane.",food:"Fische und je nach Größe auch Meeressäuger sowie andere Beute.",facts:"Haie besitzen ein Skelett aus Knorpel statt Knochen. Ihre Sinne sind an die Jagd im Wasser angepasst.",fun:"Weiße Haie sind warmblütiger als viele andere Fischarten, da sie Teile ihrer Körpertemperatur regulieren können."},
+ {name:"Honigbiene",latin:"Apis mellifera",group:"Wirbellose",emoji:"🐝",summary:"Ein sozial lebendes Insekt, das in Staaten mit Königin, Arbeiterinnen und Drohnen lebt.",habitat:"Vielfältige Landschaften mit blühenden Pflanzen; auch in vom Menschen betreuten Bienenstöcken.",food:"Nektar als Energiequelle und Pollen als wichtige Eiweißquelle.",facts:"Arbeiterinnen bestäuben Blüten und kommunizieren unter anderem durch Bewegungsmuster.",fun:"Der sogenannte Schwänzeltanz kann anderen Bienen Hinweise auf Richtung und Entfernung einer Futterquelle geben."},
+ {name:"Weinbergschnecke",latin:"Helix pomatia",group:"Wirbellose",emoji:"🐌",summary:"Eine große Landschnecke mit spiraligem Gehäuse.",habitat:"Kalkreiche, feuchte Lebensräume, Hecken, Wiesen und lichte Wälder.",food:"Vorwiegend Pflanzenmaterial und abgestorbene Pflanzenteile.",facts:"Schnecken bewegen sich mithilfe eines muskulösen Fußes und bilden Schleim zur Fortbewegung.",fun:"Bei ungünstigen Bedingungen kann die Schnecke ihr Gehäuse mit einer Schutzschicht verschließen."},
+ {name:"Tansania-Riesentausendfüßer",latin:"Spirostreptus sp.",group:"Wirbellose",emoji:"🪱",summary:"Ein großer Tausendfüßer aus Afrika. Die genaue Artbestimmung hängt von den Merkmalen des Tieres ab.",habitat:"Je nach Art tropische und subtropische Lebensräume mit Laubstreu und verrottendem Holz.",food:"Überwiegend abgestorbenes Pflanzenmaterial und verrottendes Holz.",facts:"Tausendfüßer sind keine Insekten. Sie besitzen viele Körpersegmente und tragen an den meisten Segmenten zwei Beinpaare.",fun:"Bei Bedrohung rollen sich viele Arten zusammen und können Abwehrsekrete abgeben."},
+ {name:"Monarchfalter",latin:"Danaus plexippus",group:"Wirbellose",emoji:"🦋",summary:"Ein auffällig orange-schwarz gezeichneter Schmetterling, der für Wanderungen bekannt ist.",habitat:"Offene Landschaften, Wiesen und Gärten in Teilen Amerikas; durch Verschleppung auch andernorts.",food:"Raupen fressen vor allem Seidenpflanzen; Falter nehmen Nektar auf.",facts:"Die Raupen speichern bestimmte Pflanzenstoffe, die sie für manche Fressfeinde ungenießbar machen.",fun:"Einige Populationen legen außergewöhnlich lange saisonale Wanderungen zurück."},
+ {name:"Blauwal",latin:"Balaenoptera musculus",group:"Säugetiere",emoji:"🐋",summary:"Das größte bekannte Tier, das jemals auf der Erde gelebt hat.",habitat:"Ozeane weltweit, mit saisonalen Wanderungen zwischen Nahrungs- und Fortpflanzungsgebieten.",food:"Vor allem Krill, den er in großen Wassermengen filtert.",facts:"Der Blauwal ist ein Bartenwal. Er atmet Luft und muss zum Atmen an die Oberfläche kommen.",fun:"Seine Rufe können sich über große Entfernungen unter Wasser ausbreiten."},
+ {name:"Eisbär",latin:"Ursus maritimus",group:"Säugetiere",emoji:"🐻‍❄️",summary:"Ein großer Bär, der an das Leben auf und am arktischen Meereis angepasst ist.",habitat:"Arktische Küsten und Meereis.",food:"Vor allem Robben; das Nahrungsangebot hängt stark vom Zugang zum Meereis ab.",facts:"Sein Fell wirkt weiß, die Haut darunter ist dunkel. Meereis ist für die Jagd besonders wichtig.",fun:"Eisbären sind ausgezeichnete Schwimmer, können aber durch den Rückgang des Meereises große Probleme bekommen."},
+ {name:"Dodo",latin:"Raphus cucullatus",group:"Ausgestorbene Tiere",emoji:"🦤",summary:"Ein flugunfähiger Vogel von Mauritius, der im späten 17. Jahrhundert ausstarb.",habitat:"Historisch die Insel Mauritius im Indischen Ozean.",food:"Die genaue Ernährung ist nicht vollständig bekannt; vermutlich Pflanzenmaterial und Früchte.",facts:"Der Dodo entwickelte sich ohne viele große bodenlebende Säugetier-Räuber auf Mauritius.",fun:"Der Dodo ist ein bekanntes Beispiel dafür, wie eingeführte Tiere, Jagd und Lebensraumveränderungen Arten gefährden können."},
+ {name:"Triceratops",latin:"Triceratops horridus",group:"Ausgestorbene Tiere",emoji:"🦕",summary:"Ein pflanzenfressender Dinosaurier mit drei Hörnern und großem Nackenschild.",habitat:"Späte Kreidezeit in Nordamerika.",food:"Pflanzen; der kräftige Schädel und der Schnabel eigneten sich zum Abbeißen von Pflanzenmaterial.",facts:"Triceratops lebte vor ungefähr 68 bis 66 Millionen Jahren. Er gehörte zu den Ceratopsiern.",fun:"Seine Hörner und der Nackenschild könnten bei Abwehr, Erkennung und sozialem Verhalten eine Rolle gespielt haben."}
+];
+const groups = ["Alle","Säugetiere","Vögel","Reptilien","Amphibien","Fische","Wirbellose","Ausgestorbene Tiere"];
+let activeGroup = "Alle";
+const filters = document.getElementById("filters");
+const list = document.getElementById("animals");
+const search = document.getElementById("search");
+const dialog = document.getElementById("detail");
+function makeFilters() {
+  filters.innerHTML = "";
+  groups.forEach(g => {
+    const b = document.createElement("button");
+    b.className = "filter" + (g === activeGroup ? " active" : "");
+    b.textContent = g;
+    b.type = "button";
+    b.addEventListener("click", () => { activeGroup = g; makeFilters(); render(); });
+    filters.appendChild(b);
+  });
+}
+function render() {
+  const q = search.value.trim().toLocaleLowerCase("de");
+  const shown = animals.filter(a => (activeGroup === "Alle" || a.group === activeGroup) &&
+    [a.name,a.latin,a.group,a.summary,a.habitat].some(v => v.toLocaleLowerCase("de").includes(q)));
+  document.getElementById("resultsTitle").textContent = activeGroup === "Alle" ? "Alle Tiere" : activeGroup;
+  document.getElementById("count").textContent = shown.length + (shown.length === 1 ? " Eintrag" : " Einträge");
+  list.innerHTML = "";
+  if (!shown.length) {
+    list.innerHTML = '<div class="empty">Keine passenden Tiere gefunden. Prüfe die Schreibweise oder wähle eine andere Tiergruppe.</div>';
+    return;
+  }
+  shown.forEach(a => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "animal";
+    b.innerHTML = `<div class="emoji">${a.emoji}</div><h3>${a.name}</h3><div class="latin">${a.latin}</div><div class="tag">${a.group}</div>`;
+    b.addEventListener("click", () => openAnimal(a));
+    list.appendChild(b);
+  });
+}
+function openAnimal(a) {
+  document.getElementById("dEmoji").textContent = a.emoji;
+  document.getElementById("dName").textContent = a.name;
+  document.getElementById("dLatin").textContent = a.latin;
+  document.getElementById("dGroup").textContent = a.group;
+  document.getElementById("dSummary").textContent = a.summary;
+  document.getElementById("dHabitat").textContent = a.habitat;
+  document.getElementById("dFood").textContent = a.food;
+  document.getElementById("dFacts").textContent = a.facts;
+  document.getElementById("dFun").textContent = a.fun;
+  dialog.showModal();
+}
+document.getElementById("close").addEventListener("click", () => dialog.close());
+dialog.addEventListener("click", e => { if (e.target === dialog) dialog.close(); });
+search.addEventListener("input", render);
+makeFilters(); render();
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+}
+</script>
+</body>
+</html>
